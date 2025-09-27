@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Doctors from "./pages/Doctors";
+import DoctorDetails from "./pages/DoctorDetails";
 import Pharmacies from "./pages/Pharmacies";
 import Login from "./pages/Login";
 import Patients from "./pages/Patients";
@@ -23,6 +24,7 @@ function App() {
   <Route element={isLoggedIn ? <MainLayout /> : <Login onLogin={handleLogin} />}>
     <Route path="/" element={<Home />} />
     <Route path="/doctors" element={<Doctors />} />
+    <Route path="/doctors/:doctorId" element={<DoctorDetails />} />
     <Route path="/pharmacies" element={<Pharmacies />} />
     <Route path="/patients" element={<Patients />} />
     <Route path="/appointments" element={<Appointments />} />
