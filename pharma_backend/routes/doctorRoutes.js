@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getDoctors,getPharmacies } = require('../controllers/doctorController');
+const { getDoctors,getPharmacies,getDepartments } = require('../controllers/doctorController');
 
-router.get('/doctors', getDoctors);
+router.post('/doctors-dept', getDoctors);
+router.get('/departments', getDepartments);
 
 router.get('/pharmacies', getPharmacies); 
 
