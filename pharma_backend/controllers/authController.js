@@ -52,7 +52,56 @@ exports.getMe = async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [decoded.user_id]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ username: user.username, role: user.role, name: user.name });
+    res.json({ username: user.user_name, role: user.role, name: user.full_name, email: user.email, phone: user.phone_no });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token', error: err.message });
+  }
+};
+
+
+exports.getMeSpecificRole = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'No token provided' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    let user, result;
+
+    if (decoded.role === 'doctor') {
+      result = await pool.query('SELECT * FROM doctors WHERE user_id = $1', [decoded.user_id]);
+      user = result.rows[0];
+      if (!user) return res.status(404).json({ message: 'Doctor not found' });
+      res.json({
+        username: user.user_name,
+        name: user.full_name,
+        email: user.email,
+        role: decoded.role,
+        specialization: user.specialization
+      });
+    } else if (decoded.role === 'pharmacy') {
+      result = await pool.query('SELECT * FROM pharmacies WHERE user_id = $1', [decoded.user_id]);
+      user = result.rows[0];
+      if (!user) return res.status(404).json({ message: 'Pharmacy not found' });
+      res.json({
+        username: user.user_name,
+        name: user.pharmacy_name,
+        email: user.email,
+        role: decoded.role,
+        address: user.address
+      });
+    } else {
+      // Default: patient or other roles in users table
+      result = await pool.query('SELECT * FROM users WHERE user_id = $1', [decoded.user_id]);
+      user = result.rows[0];
+      if (!user) return res.status(404).json({ message: 'User not found' });
+      res.json({
+        username: user.user_name,
+        name: user.full_name,
+        email: user.email,
+        role: decoded.role,
+        phone: user.phone_no
+      });
+    }
   } catch (err) {
     res.status(401).json({ message: 'Invalid token', error: err.message });
   }

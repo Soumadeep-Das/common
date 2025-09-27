@@ -15,11 +15,18 @@ export default function Navbar() {
   return (
     <nav className="bg-blue-600 text-white p-4">
       <div className="container-main flex justify-between items-center">
-        <h1 className="text-xl font-bold">HealthApp</h1>
+        <button
+            className="text-xl font-bold bg-transparent border-none cursor-pointer hover:text-blue-300 active:text-blue-400 transition-colors"
+            onClick={() => navigate("/")}
+        >
+            HealthApp
+        </button>
         <div className="flex gap-4 items-center">
           {isLoggedIn && (
             <>
-              <span className="font-semibold">{user?.name || "My Profile"}</span>
+              <button onClick={() => navigate('/profile')} className="btn btn-primary ml-2 hover:bg-blue-700 active:bg-blue-800 transition-colors">
+                My Profile
+            </button>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded ml-4"

@@ -7,6 +7,7 @@ import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
 import { useState } from "react";
 import MainLayout from "./layout/MainLayout";
+import Profile from "./pages/Profile";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
@@ -25,6 +26,7 @@ function App() {
     <Route path="/pharmacies" element={<Pharmacies />} />
     <Route path="/patients" element={<Patients />} />
     <Route path="/appointments" element={<Appointments />} />
+    <Route path="/profile" element={<Profile />} />
   </Route>
 </Routes>
     </Router>
