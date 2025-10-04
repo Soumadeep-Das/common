@@ -93,20 +93,64 @@ const getDoctorDetails = async (req, res) => {
       return res.status(404).json({ error: 'Doctor not found' });
     }
     
-    const pharmaciesResult = await pool.query('SELECT * FROM pharmacy');
+    const timingsQuery = `
+      SELECT 
+        d.doctor_id,
+        d.doctor_name,
+        p.pharmacy_id,
+        p.pharmacy_name,
+        dpt.day_name AS day,
+        ts.starting_time,
+        ts.ending_time,
+        o.occurrence_name AS occurrence,
+        w.week_number,
+        dptt.patient_count,
+        dptt.doctor_pharmacy_timing_id
+      FROM public.doctor d
+      JOIN public.pharmacy_doctor_bridge pdb
+          ON d.doctor_id = pdb.doctor_id
+      JOIN public.pharmacy p
+          ON pdb.pharmacy_id = p.pharmacy_id
+      JOIN public.doctor_pharmacy_timing dptt
+          ON pdb.pharmacy_doctor_bridge_id = dptt.pharmacy_doctor_bridge_id
+      LEFT JOIN public.day dpt
+          ON dptt.day_id = dpt.day_id
+      LEFT JOIN public.time_slots ts
+          ON dptt.time_slot_id = ts.time_slot_id
+      LEFT JOIN public.occurrence o
+          ON dptt.occurrence_id = o.occurrence_id
+      LEFT JOIN public.week w
+          ON dptt.week_id = w.week_id
+      WHERE 
+      d.doctor_id = $1 
+      ORDER BY p.pharmacy_id, ts.starting_time
+    `;
     
-    // Generate dummy slots for each pharmacy
-    const pharmaciesWithSlots = pharmaciesResult.rows.map(pharmacy => ({
-      ...pharmacy,
-      slots: [
-        { id: 1, time: '09:00 AM', available: true },
-        { id: 2, time: '10:00 AM', available: true },
-        { id: 3, time: '11:00 AM', available: false },
-        { id: 4, time: '02:00 PM', available: true },
-        { id: 5, time: '03:00 PM', available: true },
-        { id: 6, time: '04:00 PM', available: true }
-      ]
-    }));
+    const timingsResult = await pool.query(timingsQuery, [doctorId]);
+    
+    const pharmacyMap = {};
+    timingsResult.rows.forEach(row => {
+      if (!pharmacyMap[row.pharmacy_id]) {
+        pharmacyMap[row.pharmacy_id] = {
+          pharmacy_id: row.pharmacy_id,
+          pharmacy_name: row.pharmacy_name,
+          timings: []
+        };
+      }
+      pharmacyMap[row.pharmacy_id].timings.push(row);
+    });
+    
+    const pharmaciesWithSlots = await Promise.all(
+      Object.values(pharmacyMap).map(async pharmacy => {
+        const slots = await generateNextSlotsWithAvailability(pharmacy.timings);
+        return {
+          //...pharmacy, // for timingDetails if needed
+          pharmacy_id: pharmacy.pharmacy_id,
+          pharmacy_name: pharmacy.pharmacy_name,
+          slots: slots.slice(0, 3)
+        };
+      })
+    );
     
     res.json({
       doctor: doctorResult.rows[0],
@@ -117,5 +161,62 @@ const getDoctorDetails = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+async function generateNextSlotsWithAvailability(timings) {
+  const slots = [];
+  const today = new Date();
+  
+  for (const timing of timings) {
+    for (let i = 0; i < 90; i++) {
+      const checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[checkDate.getDay()];
+      
+      if (timing.day === dayName) {
+        if (timing.occurrence === 'weekly' || 
+           (timing.occurrence === 'monthly' && Math.ceil(checkDate.getDate() / 7) === timing.week_number)) {
+          
+          const dateStr = checkDate.getFullYear() + '-' + 
+                         String(checkDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(checkDate.getDate()).padStart(2, '0');
+          
+          const availabilityQuery = `
+            SELECT 
+              dptt.patient_count,
+              COUNT(a.appointment_id) AS booked_count,
+              (dptt.patient_count - COUNT(a.appointment_id)) AS available_count
+            FROM public.doctor_pharmacy_timing dptt
+            LEFT JOIN public.appointment a
+              ON a.doctor_pharmacy_timing_id = dptt.doctor_pharmacy_timing_id
+             AND a.appointment_date = $1
+            WHERE dptt.doctor_pharmacy_timing_id = $2
+            GROUP BY dptt.patient_count
+          `;
+          
+          const availabilityResult = await pool.query(availabilityQuery, [dateStr, timing.doctor_pharmacy_timing_id]);
+          const available = availabilityResult.rows[0]?.available_count > 0;
+          
+          slots.push({
+            id: `${timing.pharmacy_id}_${dateStr}_${timing.starting_time}`,
+            date: dateStr,
+            time: timing.starting_time.slice(0, 5),
+            available,
+            available_count: availabilityResult.rows[0]?.available_count || timing.patient_count,
+          });
+        }
+      }
+    }
+  }
+  
+return slots.sort((a, b) => {
+  const dateA = new Date(a.date + ' ' + a.time);
+  const dateB = new Date(b.date + ' ' + b.time);
+  return dateA - dateB;
+})};
+
+
+
+
 
   module.exports = { getDoctors, getPharmacies, getDepartments, getDoctorDetails };

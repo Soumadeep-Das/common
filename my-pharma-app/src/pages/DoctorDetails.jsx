@@ -69,15 +69,19 @@ export default function DoctorDetails() {
                     key={slot.id}
                     onClick={() => slot.available && handleSlotSelect(pharmacy.pharmacy_id, slot.id)}
                     disabled={!slot.available}
-                    className={`p-2 rounded text-sm ${
+                    className={`p-3 rounded text-sm border ${
                       selectedSlots[pharmacy.pharmacy_id] === slot.id
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-blue-500 text-white border-blue-600'
                         : slot.available
-                        ? 'bg-gray-100 hover:bg-gray-200'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        ? 'bg-white hover:bg-gray-50 border-gray-200'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
                     }`}
                   >
-                    {slot.time}
+                    <div className="text-purple-600 font-medium">
+                      {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'long' })}
+                    </div>
+                    <div className="text-gray-700 text-xs">{slot.date}</div>
+                    <div className="text-green-600 font-semibold">{slot.time}</div>
                   </button>
                 ))}
               </div>
