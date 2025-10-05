@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDoctorDetails } from '../api';
+import { getDoctorDetails, bookAppointment  } from '../api';
 
 export default function DoctorDetails() {
   const { doctorId } = useParams();
@@ -28,14 +28,27 @@ export default function DoctorDetails() {
     setSelectedSlots({ [pharmacyId]: slotId });
   };
 
-  const handleBookNow = (pharmacyId) => {
-    const selectedSlot = selectedSlots[pharmacyId];
-    if (selectedSlot) {
-      alert(`Booking appointment for ${doctorData.doctor.doctor_name} at pharmacy ${pharmacyId} for slot ${selectedSlot}`);
-    } else {
-      alert('Please select a time slot first');
+const handleBookNow = async (pharmacyId) => {
+  const selectedSlot = selectedSlots[pharmacyId];
+  if (selectedSlot) {
+    try {
+      const slotData = doctorData.pharmacies
+        .find(p => p.pharmacy_id === pharmacyId)
+        .slots.find(s => s.id === selectedSlot);
+      
+      await bookAppointment({
+        doctorPharmacyTimingId: slotData.doctor_pharmacy_timing_id,
+        appointmentDate: slotData.date
+      });
+      
+      alert('Appointment booked successfully!');
+      fetchDoctorDetails();
+    } catch (err) {
+      alert('Failed to book appointment');
     }
-  };
+  }
+};
+
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!doctorData) return <div className="p-6">Doctor not found</div>;

@@ -8,6 +8,16 @@ export const getDoctors = (filters = {}, page = 1, limit = 10) => {
   return axios.post(`${BASE_URL}/doctors-dept`, { filters, page, limit });
 };
 export const getDoctorDetails = (doctorId) => axios.get(`${BASE_URL}/doctors/${doctorId}`);
+export const bookAppointment = (data) => {
+  const token = localStorage.getItem('token');
+  return axios.post(`${BASE_URL}/book-appointment`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+
 
 export const getPharmacyDoctorDetails = () => axios.get(`${BASE_URL}/pharmacy-doctor`);
 export const getProfile = () => {
