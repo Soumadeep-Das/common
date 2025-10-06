@@ -1,0 +1,28 @@
+@echo off
+echo 🚀 Launching your dev environment...
+
+:: Open VS Code in your project folder and run default task
+start "" "C:\Users\souma\AppData\Local\Programs\Microsoft VS Code\Code.exe" "C:\Users\souma\Code\common"
+
+:: Wait for VS Code to load
+timeout /t 5 /nobreak >nul
+
+:: Trigger the default build task
+powershell -Command "$wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('Visual Studio Code'); Start-Sleep -Seconds 2; $wshell.SendKeys('{F1}Tasks: Run Build Task{ENTER}')"
+
+:: Open Chrome with ChatGPT and Notion
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "https://chat.openai.com" "https://www.notion.so"
+
+:: Open Edge with YouTube Music using correct profile
+start "" "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --profile-directory="Default" "https://music.youtube.com"
+
+:: Wait for the server to start (adjust time as needed)
+timeout /t 5 /nobreak >nul
+
+:: Open localhost in Chrome
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:5173"
+
+
+
+echo ✅ All done! Your workspace is ready.
+pause
