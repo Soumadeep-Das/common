@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { getPatientAppointments } = require('../controllers/appointmentController');
+const { getRoleSpecificIdViaToken } = require('../controllers/doctorController');
 
-// Placeholder: return empty array for appointments
-router.get('/', (req, res) => {
-  res.json([]);
-});
+router.get('/patient', getRoleSpecificIdViaToken, getPatientAppointments);
+// router.get('/', (req, res) => res.json([]));
 
 module.exports = router;
+

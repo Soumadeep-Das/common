@@ -29,6 +29,12 @@ export default function Home() {
             >
               View Pharmacies
             </Link>
+            <Link
+              to="/appointments"
+              className="bg-pink-500 text-white p-6 rounded-xl text-center shadow hover:bg-pink-600 transition w-full sm:w-[300px] md:w-[350px] lg:w-[400px]"
+            >
+              View Appointments
+            </Link>
           </>
         )}
         {/* Doctor role: View Patients and Appointments */}
