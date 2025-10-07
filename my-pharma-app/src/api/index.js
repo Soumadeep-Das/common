@@ -24,6 +24,15 @@ export const getPatientAppointments = () => {
     },
   });
 };
+export const cancelAppointment = (appointmentId) => {
+  const token = localStorage.getItem('token');
+  return axios.put(`${BASE_URL}/appointments/${appointmentId}/cancel`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 
 
 export const getPharmacyDoctorDetails = () => axios.get(`${BASE_URL}/pharmacy-doctor`);

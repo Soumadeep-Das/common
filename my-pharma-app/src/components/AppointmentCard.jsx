@@ -1,8 +1,11 @@
 import React from "react";
 
-export default function AppointmentCard({ appointment }) {
+export default function AppointmentCard({ appointment, onClick }) {
   return (
-    <div className="bg-white p-4 rounded-lg shadow border">
+    <div 
+      className="bg-white p-4 rounded-lg shadow border cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => onClick && onClick(appointment)}
+    >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold text-lg">Dr. {appointment.doctor_name}</h3>
         <span className={`px-2 py-1 rounded text-sm ${

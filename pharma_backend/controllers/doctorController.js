@@ -168,6 +168,7 @@ const getDoctorDetails = async (req, res) => {
 async function generateNextSlotsWithAvailability(timings) {
   const slots = [];
   const today = new Date();
+  const now = new Date();
   
   for (const timing of timings) {
     for (let i = 0; i < 90; i++) {
@@ -183,6 +184,14 @@ async function generateNextSlotsWithAvailability(timings) {
           const dateStr = checkDate.getFullYear() + '-' + 
                          String(checkDate.getMonth() + 1).padStart(2, '0') + '-' + 
                          String(checkDate.getDate()).padStart(2, '0');
+
+          // Check if slot is at least 3 hours from now
+          const slotDateTime = new Date(dateStr + ' ' + timing.starting_time);
+          const threeHoursFromNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+          
+          if (slotDateTime < threeHoursFromNow) {
+            continue; // Skip this slot
+          }
           
           const availabilityQuery = `
             SELECT 

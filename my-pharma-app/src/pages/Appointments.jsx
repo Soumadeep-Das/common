@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { getPatientAppointments } from "../api";
+import { getPatientAppointments, cancelAppointment } from "../api";
 import AppointmentCard from "../components/AppointmentCard";
+import AppointmentDetailsModal from "../components/AppointmentDetailsModal";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState({
@@ -9,6 +10,8 @@ export default function Appointments() {
     cancelled: []
   });
   const [loading, setLoading] = useState(true);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -22,6 +25,21 @@ export default function Appointments() {
       console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAppointmentClick = (appointment) => {
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      await cancelAppointment(appointmentId);
+      setIsModalOpen(false);
+      fetchAppointments();
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
     }
   };
 
@@ -45,7 +63,11 @@ export default function Appointments() {
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {appointments.upcoming.length > 0 ? (
               appointments.upcoming.map((apt) => (
-                <AppointmentCard key={apt.appointment_id} appointment={apt} />
+                <AppointmentCard 
+                  key={apt.appointment_id} 
+                  appointment={apt} 
+                  onClick={handleAppointmentClick}
+                />
               ))
             ) : (
               <p className="text-gray-500">No upcoming appointments</p>
@@ -83,6 +105,13 @@ export default function Appointments() {
           </div>
         </div>
       </div>
+
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCancel={handleCancelAppointment}
+      />
     </div>
   );
 }

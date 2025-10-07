@@ -53,4 +53,25 @@ const getPatientAppointments = async (req, res) => {
   }
 };
 
-module.exports = { getPatientAppointments };
+
+const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const patientId = req.user.role_specific_id;
+    
+    const result = await pool.query(
+      'UPDATE appointment SET patient_status = $1 WHERE appointment_id = $2 AND patient_id = $3 RETURNING *',
+      ['cancelled', appointmentId, patientId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    
+    res.json({ success: true, appointment: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { getPatientAppointments, cancelAppointment  };
