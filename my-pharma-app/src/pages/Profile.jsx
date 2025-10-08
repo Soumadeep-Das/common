@@ -12,7 +12,6 @@ const Profile = () => {
 
   return (
     <div className="p-4">
-      <h2>Welcome, {profile.username}!</h2>
       <div className="mt-4">
         <p><strong>Name:</strong> {profile.name}</p>
         <p><strong>Email:</strong> {profile.email}</p>
