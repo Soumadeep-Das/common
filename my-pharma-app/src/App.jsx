@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Doctors from "./pages/Doctors";
 import DoctorDetails from "./pages/DoctorDetails";
 import Pharmacies from "./pages/Pharmacies";
+import PharmacyDetails from "./pages/PharmacyDetails";
 import Login from "./pages/Login";
 import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
@@ -26,6 +27,7 @@ function App() {
     <Route path="/doctors" element={<Doctors />} />
     <Route path="/doctors/:doctorId" element={<DoctorDetails />} />
     <Route path="/pharmacies" element={<Pharmacies />} />
+    <Route path="/pharmacies/:pharmacyId" element={<PharmacyDetails />} />
     <Route path="/patients" element={<Patients />} />
     <Route path="/appointments" element={<Appointments />} />
     <Route path="/profile" element={<Profile />} />

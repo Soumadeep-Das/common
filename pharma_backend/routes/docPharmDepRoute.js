@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getDoctorPharmacyMapping } = require('../controllers/docPharmDepController');
+const { getDoctorsByPharmacy } = require('../controllers/docPharmDepController');
 
-router.get('/doc-pharma-dept', getDoctorPharmacyMapping);
+router.get('/pharmacy/:pharmacyId/doctors', getDoctorsByPharmacy);
 
 module.exports = router;

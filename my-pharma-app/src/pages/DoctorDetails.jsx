@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getDoctorDetails, bookAppointment  } from '../api';
 
 export default function DoctorDetails() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const pharmacyFilter = searchParams.get('pharmacy');
   const [doctorData, setDoctorData] = useState(null);
   const [selectedSlots, setSelectedSlots] = useState({});
   const [loading, setLoading] = useState(true);
@@ -28,38 +30,49 @@ export default function DoctorDetails() {
     setSelectedSlots({ [pharmacyId]: slotId });
   };
 
-const handleBookNow = async (pharmacyId) => {
-  const selectedSlot = selectedSlots[pharmacyId];
-  if (selectedSlot) {
-    try {
-      const slotData = doctorData.pharmacies
-        .find(p => p.pharmacy_id === pharmacyId)
-        .slots.find(s => s.id === selectedSlot);
-      
-      await bookAppointment({
-        doctorPharmacyTimingId: slotData.doctor_pharmacy_timing_id,
-        appointmentDate: slotData.date
-      });
-      
-      alert('Appointment booked successfully!');
-      fetchDoctorDetails();
-    } catch (err) {
-      alert('Failed to book appointment');
+  const handleBookNow = async (pharmacyId) => {
+    const selectedSlot = selectedSlots[pharmacyId];
+    if (selectedSlot) {
+      try {
+        const slotData = doctorData.pharmacies
+          .find(p => p.pharmacy_id === pharmacyId)
+          .slots.find(s => s.id === selectedSlot);
+        
+        await bookAppointment({
+          doctorPharmacyTimingId: slotData.doctor_pharmacy_timing_id,
+          appointmentDate: slotData.date
+        });
+        
+        alert('Appointment booked successfully!');
+        fetchDoctorDetails();
+      } catch (err) {
+        alert('Failed to book appointment');
+      }
     }
-  }
-};
+  };
 
+  const handleBack = () => {
+    if (pharmacyFilter) {
+      navigate(`/pharmacies/${pharmacyFilter}`);
+    } else {
+      navigate('/doctors');
+    }
+  };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!doctorData) return <div className="p-6">Doctor not found</div>;
 
+  const filteredPharmacies = pharmacyFilter 
+    ? doctorData.pharmacies.filter(p => p.pharmacy_id === parseInt(pharmacyFilter))
+    : doctorData.pharmacies;
+
   return (
     <div className="p-6">
       <button 
-        onClick={() => navigate('/doctors')}
+        onClick={handleBack}
         className="mb-4 text-blue-500 hover:underline"
       >
-        ← Back to Doctors
+        ← Back to {pharmacyFilter ? 'Pharmacy' : 'Doctors'}
       </button>
       
       <div className="mb-6">
@@ -67,10 +80,13 @@ const handleBookNow = async (pharmacyId) => {
         <p className="text-xl text-gray-600">{doctorData.doctor.department_name}</p>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4">Available Pharmacies</h2>
+      {!pharmacyFilter && (
+        <h2 className="text-2xl font-semibold mb-4">Available Pharmacies</h2>
+      )}
+
       
       <div className="space-y-6">
-        {doctorData.pharmacies.map(pharmacy => (
+        {filteredPharmacies.map(pharmacy => (
           <div key={pharmacy.pharmacy_id} className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">{pharmacy.pharmacy_name}</h3>
             
@@ -101,15 +117,15 @@ const handleBookNow = async (pharmacyId) => {
             </div>
             
             <button
-            onClick={() => handleBookNow(pharmacy.pharmacy_id)}
-            disabled={!selectedSlots[pharmacy.pharmacy_id]}
-            className={`px-4 py-2 rounded ${
+              onClick={() => handleBookNow(pharmacy.pharmacy_id)}
+              disabled={!selectedSlots[pharmacy.pharmacy_id]}
+              className={`px-4 py-2 rounded ${
                 selectedSlots[pharmacy.pharmacy_id]
-                ? 'bg-green-500 text-white hover:bg-green-600'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
-            Book Now
+              Book Now
             </button>
           </div>
         ))}

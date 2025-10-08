@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 
-export default function DoctorCard({ doctor }) {
+export default function DoctorCard({ doctor, fromPharmacy }) {
   const navigate = useNavigate();
   
   const handleClick = () => {
-    navigate(`/doctors/${doctor.doctor_id}`);
+    const url = fromPharmacy 
+      ? `/doctors/${doctor.doctor_id}?pharmacy=${fromPharmacy}`
+      : `/doctors/${doctor.doctor_id}`;
+    navigate(url);
   };
 
   return (

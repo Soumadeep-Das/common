@@ -32,6 +32,7 @@ export const cancelAppointment = (appointmentId) => {
     },
   });
 };
+export const getDoctorsByPharmacy = (pharmacyId) => axios.get(`${BASE_URL}/pharmacy/${pharmacyId}/doctors`);
 
 
 
