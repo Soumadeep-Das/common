@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { getDoctorDetails, bookAppointment  } from '../api';
+import { getSlotDetails, bookAppointment  } from '../../api';
 
-export default function DoctorDetails() {
+export default function SlotDetails() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -12,12 +12,12 @@ export default function DoctorDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDoctorDetails();
+    fetchSlotDetails();
   }, [doctorId]);
 
-  const fetchDoctorDetails = async () => {
+  const fetchSlotDetails = async () => {
     try {
-      const res = await getDoctorDetails(doctorId);
+      const res = await getSlotDetails(doctorId);
       setDoctorData(res.data);
     } catch (err) {
       console.error('Error fetching doctor details:', err);
@@ -44,7 +44,7 @@ export default function DoctorDetails() {
         });
         
         alert('Appointment booked successfully!');
-        fetchDoctorDetails();
+        fetchSlotDetails();
       } catch (err) {
         alert('Failed to book appointment');
       }

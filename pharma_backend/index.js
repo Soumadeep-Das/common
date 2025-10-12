@@ -9,20 +9,24 @@ app.use(cors());
 
 app.use(express.json());
 
-const doctorRoutes = require('./routes/doctorRoutes');
-app.use('/api', doctorRoutes);
-
-const mappingRoutes = require('./routes/docPharmDepRoute');
-app.use('/api', mappingRoutes);
-
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
-const patientRoutes = require('./routes/patientRoutes');
-app.use('/api/patients', patientRoutes);
+//patient routes
+const viewDoctorRoutes = require('./routes/patient/viewDoctorRoutes');
+app.use('/api', viewDoctorRoutes);
 
-const appointmentRoutes = require('./routes/appointmentRoutes');
-app.use('/api/appointments', appointmentRoutes);
+const viewPharmacyRoutes = require('./routes/patient/viewPharmacyRoutes');
+app.use('/api', viewPharmacyRoutes);
+
+const viewAppointmentRoutes = require('./routes/patient/viewAppointmentRoutes');
+app.use('/api/appointments', viewAppointmentRoutes);
+
+//pharmacy routes
+
+//doctor routes
+
+//admin routes
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

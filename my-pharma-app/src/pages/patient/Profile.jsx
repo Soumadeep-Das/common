@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getProfile } from '../api'; // You need to implement this API call
+import { getProfile } from '../../api'; // You need to implement this API call
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);

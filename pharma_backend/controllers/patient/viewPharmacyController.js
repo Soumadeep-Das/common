@@ -1,4 +1,14 @@
-const pool = require('../db');
+const pool = require('../../db');
+
+const getPharmacies = async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM pharmacy');
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching pharmacies:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 
 const getDoctorsByPharmacy = async (req, res) => {
   try {
@@ -26,4 +36,4 @@ const getDoctorsByPharmacy = async (req, res) => {
 };
 
 
-module.exports = { getDoctorsByPharmacy };
+module.exports = { getDoctorsByPharmacy, getPharmacies };

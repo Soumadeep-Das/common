@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDoctorsByPharmacy } from "../api";
-import DoctorCard from "../components/DoctorCard";
+import { getDoctorsByPharmacy } from "../../api";
+import DoctorCard from "../../components/patient/DoctorCard";
 
 export default function PharmacyDetails() {
   const { pharmacyId } = useParams();

@@ -5,8 +5,8 @@ export default function DoctorCard({ doctor, fromPharmacy }) {
   
   const handleClick = () => {
     const url = fromPharmacy 
-      ? `/doctors/${doctor.doctor_id}?pharmacy=${fromPharmacy}`
-      : `/doctors/${doctor.doctor_id}`;
+      ? `/slots/${doctor.doctor_id}?pharmacy=${fromPharmacy}`
+      : `/slots/${doctor.doctor_id}`;
     navigate(url);
   };
 

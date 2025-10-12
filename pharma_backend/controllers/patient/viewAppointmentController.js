@@ -1,4 +1,26 @@
-const pool = require('../db');
+const pool = require('../../db');
+
+const bookAppointment = async (req, res) => {
+  try {
+    const { doctorPharmacyTimingId, appointmentDate } = req.body;
+    const patientId = req.user.role_specific_id;
+    console.log('req.user:', req.user);
+    console.log('Booking appointment for patient:', patientId);
+    
+    if (!doctorPharmacyTimingId || !appointmentDate || !patientId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const result = await pool.query(
+      'INSERT INTO public.appointment (doctor_pharmacy_timing_id, patient_id, appointment_date) VALUES ($1, $2, $3) RETURNING *',
+      [doctorPharmacyTimingId, patientId, appointmentDate]
+    );
+    
+    res.json({ success: true, appointment: result.rows[0] });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 const getPatientAppointments = async (req, res) => {
   try {
@@ -37,7 +59,8 @@ const getPatientAppointments = async (req, res) => {
       const [hours, minutes] = apt.appointment_time.split(':');
       aptDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      console.log(apt.patient_status, aptDate, now);
+      // console.log(apt.patient_status, aptDate, now);
+      
       if (apt.patient_status  === 'cancelled') {
         categorized.cancelled.push(apt);
       } else if (apt.patient_status  === 'completed' || (apt.patient_status === 'booked' && aptDate < now)) {
@@ -74,4 +97,4 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-module.exports = { getPatientAppointments, cancelAppointment  };
+module.exports = { getPatientAppointments, cancelAppointment, bookAppointment  };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { getPatientAppointments, cancelAppointment } from "../api";
-import AppointmentCard from "../components/AppointmentCard";
-import AppointmentDetailsModal from "../components/AppointmentDetailsModal";
+import { getPatientAppointments, cancelAppointment } from "../../api";
+import AppointmentCard from "../../components/patient/AppointmentCard";
+import AppointmentDetailsModal from "../../components/patient/AppointmentDetailsModal";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState({

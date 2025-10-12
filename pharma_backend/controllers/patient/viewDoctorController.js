@@ -1,4 +1,4 @@
-const pool = require('../db');
+const pool = require('../../db');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -52,16 +52,6 @@ const getDoctors = async (req, res) => {
 
 
 
-const getPharmacies = async (req, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM pharmacy');
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching pharmacies:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  };
-
   const getDepartments = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -74,7 +64,7 @@ const getPharmacies = async (req, res) => {
   }
 };
   
-const getDoctorDetails = async (req, res) => {
+const getSlotDetails = async (req, res) => {
   try {
     const { doctorId } = req.params;
     
@@ -228,58 +218,10 @@ return slots.sort((a, b) => {
   return dateA - dateB;
 })};
 
-const bookAppointment = async (req, res) => {
-  try {
-    const { doctorPharmacyTimingId, appointmentDate } = req.body;
-    const patientId = req.user.role_specific_id;
-    console.log('req.user:', req.user);
-    console.log('Booking appointment for patient:', patientId);
-    
-    if (!doctorPharmacyTimingId || !appointmentDate || !patientId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    const result = await pool.query(
-      'INSERT INTO public.appointment (doctor_pharmacy_timing_id, patient_id, appointment_date) VALUES ($1, $2, $3) RETURNING *',
-      [doctorPharmacyTimingId, patientId, appointmentDate]
-    );
-    
-    res.json({ success: true, appointment: result.rows[0] });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-
-const getRoleSpecificIdViaToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: 'No token provided' });
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-        let roleSpecificId;
-    if (decoded.role === 'patient') {
-      const result = await pool.query('SELECT patient_id FROM patient WHERE user_id = $1', [decoded.user_id]);
-      roleSpecificId = result.rows[0]?.patient_id;
-    } else if (decoded.role === 'doctor') {
-      const result = await pool.query('SELECT doctor_id FROM doctor WHERE user_id = $1', [decoded.user_id]);
-      roleSpecificId = result.rows[0]?.doctor_id;
-    } else if (decoded.role === 'pharmacy') {
-      const result = await pool.query('SELECT pharmacy_id FROM pharmacy WHERE user_id = $1', [decoded.user_id]);
-      roleSpecificId = result.rows[0]?.pharmacy_id;
-    }
-    
-    req.user = {
-      ...decoded,
-      role_specific_id: roleSpecificId
-    };
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-};
 
 
 
 
-  module.exports = { getDoctors, getPharmacies, getDepartments, getDoctorDetails, bookAppointment,getRoleSpecificIdViaToken };
+
+
+  module.exports = { getDoctors, getDepartments, getSlotDetails };

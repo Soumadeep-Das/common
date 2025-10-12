@@ -106,3 +106,31 @@ exports.getMeSpecificRole = async (req, res) => {
     res.status(401).json({ message: 'Invalid token', error: err.message });
   }
 };
+
+exports.getRoleSpecificIdViaToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'No token provided' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+        let roleSpecificId;
+    if (decoded.role === 'patient') {
+      const result = await pool.query('SELECT patient_id FROM patient WHERE user_id = $1', [decoded.user_id]);
+      roleSpecificId = result.rows[0]?.patient_id;
+    } else if (decoded.role === 'doctor') {
+      const result = await pool.query('SELECT doctor_id FROM doctor WHERE user_id = $1', [decoded.user_id]);
+      roleSpecificId = result.rows[0]?.doctor_id;
+    } else if (decoded.role === 'pharmacy') {
+      const result = await pool.query('SELECT pharmacy_id FROM pharmacy WHERE user_id = $1', [decoded.user_id]);
+      roleSpecificId = result.rows[0]?.pharmacy_id;
+    }
+    
+    req.user = {
+      ...decoded,
+      role_specific_id: roleSpecificId
+    };
+    next();
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+};

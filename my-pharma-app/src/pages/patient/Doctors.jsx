@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getDoctors, getDepartments } from "../api";
-import DoctorCard from "../components/DoctorCard";
+import { getDoctors, getDepartments } from "../../api";
+import DoctorCard from "../../components/patient/DoctorCard";
 
 export default function Doctors() {
   const [doctors, setDoctors] = useState([]);

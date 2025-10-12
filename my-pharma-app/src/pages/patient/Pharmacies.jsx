@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getPharmacies } from "../api";
-import PharmacyCard from "../components/Pharmacycard";
+import { getPharmacies } from "../../api";
+import PharmacyCard from "../../components/patient/Pharmacycard";
 
 export default function Pharmacies() {
   const [pharmacies, setPharmacies] = useState([]);
