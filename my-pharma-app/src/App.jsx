@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import MainLayout from "./layout/MainLayout";
 import Profile from "./pages/patient/Profile";
 import MyDoctors from "./pages/pharmacy/myDoctors";
+import MyDoctorDetails from "./pages/pharmacy/myDoctorDetails";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -51,6 +52,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           //pharmacy
           <Route path="/my-doctors" element={<MyDoctors />} />
+          <Route path="/pharmacy/my-doctors/:doctorId" element={<MyDoctorDetails />} />
           //doctor
           //admin
         </Route>
