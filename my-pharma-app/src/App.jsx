@@ -9,6 +9,7 @@ import Appointments from "./pages/patient/Appointments";
 import { useState, useEffect } from "react";
 import MainLayout from "./layout/MainLayout";
 import Profile from "./pages/patient/Profile";
+import MyDoctors from "./pages/pharmacy/myDoctors";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -49,6 +50,7 @@ function App() {
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/profile" element={<Profile />} />
           //pharmacy
+          <Route path="/my-doctors" element={<MyDoctors />} />
           //doctor
           //admin
         </Route>

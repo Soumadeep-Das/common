@@ -22,7 +22,10 @@ app.use('/api', viewPharmacyRoutes);
 const viewAppointmentRoutes = require('./routes/patient/viewAppointmentRoutes');
 app.use('/api/appointments', viewAppointmentRoutes);
 
+
 //pharmacy routes
+const myDoctorRoutes = require('./routes/pharmacy/myDoctorRoutes');
+app.use('/api', myDoctorRoutes);
 
 //doctor routes
 

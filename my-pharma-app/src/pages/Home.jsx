@@ -37,6 +37,17 @@ export default function Home() {
             </Link>
           </>
         )}
+        {/* Patient role: View Doctors and Pharmacies */}
+        {role === "pharmacy" && (
+          <>
+            <Link
+              to="/my-doctors"
+              className="bg-green-500 text-white p-6 rounded-xl text-center shadow hover:bg-green-600 transition w-full sm:w-[300px] md:w-[350px] lg:w-[400px]"
+            >
+              My Doctors
+            </Link>
+          </>
+        )}
         {/* Doctor role: View Patients and Appointments */}
         {role === "doctor" && (
           <>
