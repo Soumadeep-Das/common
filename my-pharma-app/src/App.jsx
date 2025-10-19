@@ -11,6 +11,7 @@ import MainLayout from "./layout/MainLayout";
 import Profile from "./pages/patient/Profile";
 import MyDoctors from "./pages/pharmacy/myDoctors";
 import MyDoctorDetails from "./pages/pharmacy/myDoctorDetails";
+import MyDoctorBookings from "./pages/pharmacy/MyDoctorBookings";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -53,6 +54,7 @@ function App() {
           //pharmacy
           <Route path="/my-doctors" element={<MyDoctors />} />
           <Route path="/pharmacy/my-doctors/:doctorId" element={<MyDoctorDetails />} />
+          <Route path="/pharmacy/doctors/:doctorId/bookings" element={<MyDoctorBookings />} />
           //doctor
           //admin
         </Route>

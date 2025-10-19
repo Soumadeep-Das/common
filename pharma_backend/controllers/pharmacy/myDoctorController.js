@@ -163,5 +163,94 @@ const getMyDoctorDetails = async (req, res) => {
   }
 };
 
-module.exports = { getMyDoctors, getMyDoctorDetails };
+const getMyDoctorAppointments = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const pharmacyId = req.user.role_specific_id;
+    const { date } = req.query;
+    
+    let query, params;
+    
+    if (date) {
+      // Filter by specific date
+      query = `
+        SELECT 
+          a.*,
+          p.patient_name,
+          ts.starting_time as appointment_time,
+          DATE(a.appointment_date) as appointment_date_only
+        FROM appointment a
+        JOIN doctor_pharmacy_timing dpt ON a.doctor_pharmacy_timing_id = dpt.doctor_pharmacy_timing_id
+        JOIN pharmacy_doctor_bridge pdb ON dpt.pharmacy_doctor_bridge_id = pdb.pharmacy_doctor_bridge_id
+        JOIN patient p ON a.patient_id = p.patient_id
+        JOIN time_slots ts ON dpt.time_slot_id = ts.time_slot_id
+        WHERE pdb.doctor_id = $1 AND pdb.pharmacy_id = $2
+          AND DATE(a.appointment_date) = $3
+        ORDER BY a.appointment_date ASC, ts.starting_time ASC
+      `;
+      params = [doctorId, pharmacyId, date];
+    } else {
+      // Get all appointments for date picker
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 30);
+      
+      query = `
+        SELECT 
+          a.*,
+          p.patient_name,
+          ts.starting_time as appointment_time,
+          DATE(a.appointment_date) as appointment_date_only
+        FROM appointment a
+        JOIN doctor_pharmacy_timing dpt ON a.doctor_pharmacy_timing_id = dpt.doctor_pharmacy_timing_id
+        JOIN pharmacy_doctor_bridge pdb ON dpt.pharmacy_doctor_bridge_id = pdb.pharmacy_doctor_bridge_id
+        JOIN patient p ON a.patient_id = p.patient_id
+        JOIN time_slots ts ON dpt.time_slot_id = ts.time_slot_id
+        WHERE pdb.doctor_id = $1 AND pdb.pharmacy_id = $2
+          AND a.appointment_date BETWEEN $3 AND $4
+        ORDER BY a.appointment_date ASC, ts.starting_time ASC
+      `;
+      params = [doctorId, pharmacyId, startDate, endDate];
+    }
+    
+    const result = await pool.query(query, params);
+    res.json({ data: result.rows });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getMyDoctorAppointmentDates = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const pharmacyId = req.user.role_specific_id;
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
+    
+    const query = `
+      SELECT DISTINCT a.appointment_date
+      FROM appointment a
+      JOIN doctor_pharmacy_timing dpt ON a.doctor_pharmacy_timing_id = dpt.doctor_pharmacy_timing_id
+      JOIN pharmacy_doctor_bridge pdb ON dpt.pharmacy_doctor_bridge_id = pdb.pharmacy_doctor_bridge_id
+      WHERE pdb.doctor_id = $1 AND pdb.pharmacy_id = $2
+        AND a.appointment_date BETWEEN $3 AND $4
+      ORDER BY a.appointment_date ASC
+    `;
+    
+    const result = await pool.query(query, [doctorId, pharmacyId, startDate, endDate]);
+    res.json({ data: result.rows });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+
+module.exports = { getMyDoctors, getMyDoctorDetails, getMyDoctorAppointments, getMyDoctorAppointmentDates };
 

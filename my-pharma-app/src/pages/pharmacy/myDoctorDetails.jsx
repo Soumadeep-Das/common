@@ -1,4 +1,4 @@
-// my-pharma-app/src/pages/pharmacy/myDoctorDetails.jsx
+// Updated myDoctorDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -25,6 +25,10 @@ export default function MyDoctorDetails() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCheckBookings = () => {
+    navigate(`/pharmacy/doctors/${doctorId}/bookings`);
   };
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -55,7 +59,7 @@ export default function MyDoctorDetails() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-6">
+      <div className="bg-white rounded-xl shadow p-6 mb-6">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold">Schedule & Fees</h3>
           <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
@@ -73,6 +77,24 @@ export default function MyDoctorDetails() {
         <div>
           <p className="text-sm text-gray-500 mb-2">Sitting Details</p>
           <div className="text-gray-700 whitespace-pre-line">{doctor.sitting_details}</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Bookings</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <button 
+            className="px-4 py-3 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+            disabled
+          >
+            Add Booking
+          </button>
+          <button 
+            onClick={handleCheckBookings}
+            className="px-4 py-3 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Check Bookings
+          </button>
         </div>
       </div>
     </div>
