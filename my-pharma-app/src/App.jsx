@@ -11,7 +11,9 @@ import MainLayout from "./layout/MainLayout";
 import Profile from "./pages/patient/Profile";
 import MyDoctors from "./pages/pharmacy/myDoctors";
 import MyDoctorDetails from "./pages/pharmacy/myDoctorDetails";
-import MyDoctorBookings from "./pages/pharmacy/MyDoctorBookings";
+import MyDoctorBookings from "./pages/pharmacy/myDoctorBookings";
+import ViewAllDoctorForPharmacy from "./pages/pharmacy/viewAllDoctors";
+import AddDoctorToPharmacy from "./pages/pharmacy/addDoctor";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -55,6 +57,8 @@ function App() {
           <Route path="/my-doctors" element={<MyDoctors />} />
           <Route path="/pharmacy/my-doctors/:doctorId" element={<MyDoctorDetails />} />
           <Route path="/pharmacy/doctors/:doctorId/bookings" element={<MyDoctorBookings />} />
+          <Route path="/view-all-doctors" element={<ViewAllDoctorForPharmacy />} />
+          <Route path="/pharmacy/add-doctor/:doctorId" element={<AddDoctorToPharmacy />} />
           //doctor
           //admin
         </Route>

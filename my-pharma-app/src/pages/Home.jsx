@@ -46,6 +46,12 @@ export default function Home() {
             >
               My Doctors
             </Link>
+             <Link
+                to="/view-all-doctors"
+                className="bg-blue-500 text-white p-6 rounded-xl text-center shadow hover:bg-blue-600 transition w-full sm:w-[300px] md:w-[350px] lg:w-[400px]"
+              >
+                View Doctors
+            </Link>
           </>
         )}
         {/* Doctor role: View Patients and Appointments */}

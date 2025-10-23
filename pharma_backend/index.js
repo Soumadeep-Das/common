@@ -27,6 +27,10 @@ app.use('/api/appointments', viewAppointmentRoutes);
 const myDoctorRoutes = require('./routes/pharmacy/myDoctorRoutes');
 app.use('/api', myDoctorRoutes);
 
+const viewAllDoctorRoutes = require('./routes/pharmacy/viewAllDoctorRoutes');
+app.use('/api', viewAllDoctorRoutes);
+
+
 //doctor routes
 
 //admin routes
