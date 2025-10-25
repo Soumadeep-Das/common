@@ -68,7 +68,7 @@ exports.getMeSpecificRole = async (req, res) => {
     let user, result;
 
     if (decoded.role === 'doctor') {
-      result = await pool.query('SELECT * FROM doctors WHERE user_id = $1', [decoded.user_id]);
+      result = await pool.query('SELECT * FROM doctor WHERE user_id = $1', [decoded.user_id]);
       user = result.rows[0];
       if (!user) return res.status(404).json({ message: 'Doctor not found' });
       res.json({
@@ -79,7 +79,7 @@ exports.getMeSpecificRole = async (req, res) => {
         specialization: user.specialization
       });
     } else if (decoded.role === 'pharmacy') {
-      result = await pool.query('SELECT * FROM pharmacies WHERE user_id = $1', [decoded.user_id]);
+      result = await pool.query('SELECT * FROM pharmacy WHERE user_id = $1', [decoded.user_id]);
       user = result.rows[0];
       if (!user) return res.status(404).json({ message: 'Pharmacy not found' });
       res.json({
@@ -91,7 +91,7 @@ exports.getMeSpecificRole = async (req, res) => {
       });
     } else {
       // Default: patient or other roles in users table
-      result = await pool.query('SELECT * FROM users WHERE user_id = $1', [decoded.user_id]);
+      result = await pool.query('SELECT * FROM user WHERE user_id = $1', [decoded.user_id]);
       user = result.rows[0];
       if (!user) return res.status(404).json({ message: 'User not found' });
       res.json({
