@@ -11,15 +11,16 @@ export default function AddDoctorToPharmacy() {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedDay, setSelectedDay] = useState('All');
-  const [formData, setFormData] = useState({
+  const [sittingDetailsList, setSittingDetailsList] = useState([{
+    id: 1,
     occurrence: '',
     day: '',
     patientCount: '',
     roomNumber: '',
     week: '',
     timeSlot: ''
-  });
-  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  }]);
+  const [availableTimeSlotsMap, setAvailableTimeSlotsMap] = useState({});
   const [dropdownData, setDropdownData] = useState({
     occurrences: [],
     weeks: [],
@@ -27,14 +28,12 @@ export default function AddDoctorToPharmacy() {
     timeSlots: [],
     rooms: []
   });
-  
-
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   useEffect(() => {
     if (dropdownData.rooms.length === 1) {
-      setFormData(prev => ({ ...prev, roomNumber: dropdownData.rooms[0].toString() }));
+      setSittingDetailsList(prev => prev.map(sitting => ({ ...sitting, roomNumber: dropdownData.rooms[0].toString() })));
     }
   }, [dropdownData.rooms]);
 
@@ -114,10 +113,56 @@ const filterAvailableTimeSlots = (patientCount, selectedRoom, selectedDay, occur
   const targetHours = patientCount === '15' ? 1 : 0;
   const targetMinutes = patientCount === '15' ? 30 : 30;
   
-  const filteredSlots = dropdownData.timeSlots.filter(slot => 
+  let filteredSlots = dropdownData.timeSlots.filter(slot => 
     slot.duration.hours === targetHours && slot.duration.minutes === targetMinutes
   );
   
+  // Filter by pharmacy opening/closing hours
+  if (dropdownData.pharmacyOpeningHour && dropdownData.pharmacyClosingHour) {
+    const openingTime = dropdownData.pharmacyOpeningHour;
+    const closingTime = dropdownData.pharmacyClosingHour;
+    
+    // Check for 24-hour operation
+    const is24Hour = openingTime === '00:00:00' && closingTime === '00:00:00';
+    
+    if (is24Hour) {
+      // 24-hour operation - no filtering needed, all slots are valid
+      console.log('24-hour pharmacy - all slots available');
+    } else {
+      // Check if pharmacy operates across midnight (closing time < opening time)
+      const operatesAcrossMidnight = closingTime < openingTime;
+      
+      filteredSlots = filteredSlots.filter(slot => {
+        const startTime = slot.starting_time;
+        const endTime = slot.ending_time;
+        
+        if (operatesAcrossMidnight) {
+          // Pharmacy operates across midnight (e.g., 09:00 to 02:00 next day)
+          if (startTime >= openingTime) {
+            // Slot starts in evening/night (after opening time)
+            return endTime >= startTime || endTime <= closingTime;
+          } else {
+            // Slot starts in early morning (before opening time)
+            return startTime < closingTime && endTime <= closingTime;
+          }
+        } else {
+          // Normal operation within same day - exclude slots that cross midnight
+          const slotCrossesMidnight = endTime < startTime;
+          if (slotCrossesMidnight) {
+            return false; // Exclude all slots that cross midnight for same-day operation
+          }
+          return startTime >= openingTime && endTime <= closingTime;
+        }
+      });
+    }
+    
+    console.log('Remaining slots:', filteredSlots.map(slot => 
+      `${slot.starting_time.slice(0,5)} - ${slot.ending_time.slice(0,5)}`
+    ));
+  }
+
+
+
   if (!selectedRoom || !pharmacyRawSlots[selectedRoom]) return filteredSlots;
   
   const timeToMinutes = (timeStr) => {
@@ -189,43 +234,119 @@ const filterAvailableTimeSlots = (patientCount, selectedRoom, selectedDay, occur
 };
 
 
-
-
-  const handleFormChange = (field, value) => {
-    const newFormData = { ...formData, [field]: value };
-    
-    if (field === 'patientCount' || field === 'roomNumber' || field === 'day' || field === 'occurrence' || field === 'week') {
-      const canFilter = newFormData.patientCount && (
-        newFormData.occurrence === '1' || // Daily
-        (newFormData.occurrence === '2' && newFormData.day) || // Weekly
-        (newFormData.occurrence === '3' && newFormData.day && newFormData.week) // Monthly
-      );
+  const handleSittingChange = (id, field, value) => {
+    // Handle occurrence change on first box - remove additional boxes for daily/empty
+    if (field === 'occurrence' && id === 1 && (value === '1' || value === '')) {
+      const firstSitting = { ...sittingDetailsList[0], [field]: value };
       
-      if (canFilter) {
-        const filteredSlots = filterAvailableTimeSlots(
-          newFormData.patientCount, 
-          newFormData.roomNumber || (dropdownData.rooms.length === 1 ? '1' : dropdownData.rooms[0]), 
-          newFormData.day,
-          newFormData.occurrence,
-          newFormData.week
-        );
-        setAvailableTimeSlots(filteredSlots);
-      } else {
-        setAvailableTimeSlots([]);
+      if (field === 'occurrence') {
+        if (value === '1') {
+          firstSitting.day = '';
+          firstSitting.week = '';
+        } else if (value === '2') {
+          firstSitting.week = '';
+        }
       }
-      newFormData.timeSlot = '';
+      
+      setSittingDetailsList([firstSitting]);
+      setAvailableTimeSlotsMap({ 1: [] });
+      return;
     }
-    
-    if (field === 'occurrence') {
-      if (value === '1') {
-        newFormData.day = '';
-        newFormData.week = '';
-      } else if (value === '2') {
-        newFormData.week = '';
+
+    const updatedList = sittingDetailsList.map(sitting => {
+      if (sitting.id === id) {
+        const newSitting = { ...sitting, [field]: value };
+        
+        if (field === 'patientCount' || field === 'roomNumber' || field === 'day' || field === 'occurrence' || field === 'week') {
+          const canFilter = newSitting.patientCount && (
+            newSitting.occurrence === '1' || // Daily
+            (newSitting.occurrence === '2' && newSitting.day) || // Weekly
+            (newSitting.occurrence === '3' && newSitting.day && newSitting.week) // Monthly
+          );
+          
+          if (canFilter) {
+            const filteredSlots = filterAvailableTimeSlots(
+              newSitting.patientCount, 
+              newSitting.roomNumber || (dropdownData.rooms.length === 1 ? '1' : dropdownData.rooms[0]), 
+              newSitting.day,
+              newSitting.occurrence,
+              newSitting.week
+            );
+            setAvailableTimeSlotsMap(prev => ({ ...prev, [id]: filteredSlots }));
+          } else {
+            setAvailableTimeSlotsMap(prev => ({ ...prev, [id]: [] }));
+          }
+          newSitting.timeSlot = '';
+        }
+        
+        if (field === 'occurrence') {
+          if (value === '1') {
+            newSitting.day = '';
+            newSitting.week = '';
+          } else if (value === '2') {
+            newSitting.week = '';
+          }
+        }
+        
+        return newSitting;
       }
-    }
+      
+      // Update occurrence for all other boxes when first box occurrence changes
+      if (field === 'occurrence' && id === 1) {
+        return {
+          ...sitting,
+          occurrence: value,
+          day: '',
+          week: '',
+          patientCount: '',
+          roomNumber: '',
+          timeSlot: ''
+        };
+      }
+      
+      return sitting;
+    });
     
-    setFormData(newFormData);
+    setSittingDetailsList(updatedList);
+  };
+
+
+
+  const addMoreSittingDetails = () => {
+    const firstSitting = sittingDetailsList[0];
+    if (firstSitting.occurrence === '2' || firstSitting.occurrence === '3') {
+      const newId = Math.max(...sittingDetailsList.map(s => s.id)) + 1;
+      const newSitting = {
+        id: newId,
+        occurrence: firstSitting.occurrence,
+        day: '',
+        patientCount: '',
+        roomNumber: '',
+        week: '',
+        timeSlot: ''
+      };
+      setSittingDetailsList([...sittingDetailsList, newSitting]);
+    }
+  };
+
+  const removeSittingDetails = (id) => {
+    if (sittingDetailsList.length > 1) {
+      setSittingDetailsList(sittingDetailsList.filter(sitting => sitting.id !== id));
+      setAvailableTimeSlotsMap(prev => {
+        const newMap = { ...prev };
+        delete newMap[id];
+        return newMap;
+      });
+    }
+  };
+
+  const getUsedDaysWeeks = (currentId) => {
+    return sittingDetailsList
+      .filter(sitting => sitting.id !== currentId)
+      .map(sitting => ({
+        day: sitting.day,
+        week: sitting.week
+      }));
   };
 
   const processUnavailabilityData = (sittingDetails) => {
@@ -342,7 +463,6 @@ const filterAvailableTimeSlots = (patientCount, selectedRoom, selectedDay, occur
     return displaySlots;
   };
 
-
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
@@ -391,8 +511,19 @@ const filterAvailableTimeSlots = (patientCount, selectedRoom, selectedDay, occur
             <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
             <p className="text-lg font-medium">{pharmacyData?.location}</p>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Operating Hours</label>
+            <p className="text-lg font-medium">
+              {dropdownData.pharmacyOpeningHour && dropdownData.pharmacyClosingHour ? (
+                dropdownData.pharmacyOpeningHour === '00:00:00' && dropdownData.pharmacyClosingHour === '00:00:00' ? 
+                  '24 Hours' : 
+                  `${dropdownData.pharmacyOpeningHour.slice(0,5)} - ${dropdownData.pharmacyClosingHour.slice(0,5)}`
+              ) : 'Not available'}
+            </p>
+          </div>
         </div>
       </div>
+
 
       {/* Section 3: Unavailable Time Slots */}
       <div className="bg-white p-6 rounded-xl shadow">
@@ -506,122 +637,191 @@ const filterAvailableTimeSlots = (patientCount, selectedRoom, selectedDay, occur
 
       {/* Section 4: Sitting Details */}
       <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-xl font-semibold mb-4 text-purple-600">Sitting Details</h2>
-        <div className="grid grid-cols-3 gap-4">
-          
-          {/* Occurrence */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Occurrence</label>
-            <select 
-              value={formData.occurrence}
-              onChange={(e) => handleFormChange('occurrence', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-purple-600">Sitting Details</h2>
+          {(sittingDetailsList[0]?.occurrence === '2' || sittingDetailsList[0]?.occurrence === '3') && (
+            <button
+              onClick={addMoreSittingDetails}
+              className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200"
             >
-              <option value="">Select Occurrence</option>
-              {dropdownData.occurrences.map(occ => (
-                <option key={occ.occurrence_id} value={occ.occurrence_id}>
-                  {occ.occurrence_name.charAt(0).toUpperCase() + occ.occurrence_name.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Day - Hidden for daily */}
-          {formData.occurrence !== '1' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Day</label>
-              <select 
-                value={formData.day}
-                onChange={(e) => handleFormChange('day', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">Select Day</option>
-                {dropdownData.days.map(day => (
-                  <option key={day.day_id} value={day.day_name}>{day.day_name}</option>
-                ))}
-              </select>
-            </div>
+              + Add More
+            </button>
           )}
+        </div>
 
-          {/* Week - Only for monthly */}
-          {formData.occurrence === '3' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Week</label>
-              <select 
-                value={formData.week}
-                onChange={(e) => handleFormChange('week', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">Select Week</option>
-                {dropdownData.weeks.map(week => (
-                  <option key={week.week_id} value={week.week_id}>
-                    {week.week_number === 1 ? '1st' : week.week_number === 2 ? '2nd' : week.week_number === 3 ? '3rd' : `${week.week_number}th`} Week
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="space-y-6">
+          {sittingDetailsList.map((sitting, index) => {
+            const usedDaysWeeks = getUsedDaysWeeks(sitting.id);
+            const availableTimeSlots = availableTimeSlotsMap[sitting.id] || [];
+            
+            return (
+              <div key={sitting.id} className="border rounded-lg p-4 relative">
+                {sittingDetailsList.length > 1 && (
+                  <button
+                    onClick={() => removeSittingDetails(sitting.id)}
+                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm"
+                  >
+                    ✕
+                  </button>
+                )}
+                
+                <div className="grid grid-cols-3 gap-4">
+                  
+                  {/* Occurrence */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Occurrence</label>
+                    <select 
+                      value={sitting.occurrence}
+                      onChange={(e) => handleSittingChange(sitting.id, 'occurrence', e.target.value)}
+                      disabled={index > 0}
+                      className={`w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${index > 0 ? 'bg-gray-100' : ''}`}
+                    >
+                      <option value="">Select Occurrence</option>
+                      {dropdownData.occurrences.map(occ => (
+                        <option key={occ.occurrence_id} value={occ.occurrence_id}>
+                          {occ.occurrence_name.charAt(0).toUpperCase() + occ.occurrence_name.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-          {/* Patient Count */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Patient Count</label>
-            <select 
-              value={formData.patientCount}
-              onChange={(e) => handleFormChange('patientCount', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="">Select Count</option>
-              <option value="15">15 Patients</option>
-              <option value="20">20 Patients</option>
-            </select>
-          </div>
+                  {/* Day - Hidden for daily */}
+                  {sitting.occurrence !== '1' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Day</label>
+                      <select 
+                        value={sitting.day}
+                        onChange={(e) => handleSittingChange(sitting.id, 'day', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="">Select Day</option>
+                        {dropdownData.days.map(day => {
+                          const isUsed = usedDaysWeeks.some(used => 
+                            used.day === day.day_name && 
+                            (sitting.occurrence === '2' || used.week === sitting.week)
+                          );
+                          return (
+                            <option key={day.day_id} value={day.day_name} disabled={isUsed}>
+                              {day.day_name} {isUsed ? '(Used)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
 
-          {/* Room Number - Only if multiple rooms */}
-          {dropdownData.rooms.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
-              <select 
-                value={formData.roomNumber}
-                onChange={(e) => handleFormChange('roomNumber', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">Select Room</option>
-                {dropdownData.rooms.map(room => (
-                  <option key={room} value={room}>Room {room}</option>
-                ))}
-              </select>
-            </div>
-          )}
+                  {/* Week - Only for monthly */}
+                  {sitting.occurrence === '3' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Week</label>
+                      <select 
+                        value={sitting.week}
+                        onChange={(e) => handleSittingChange(sitting.id, 'week', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="">Select Week</option>
+                        {dropdownData.weeks.map(week => {
+                          const isUsed = usedDaysWeeks.some(used => 
+                            used.day === sitting.day && used.week === week.week_id.toString()
+                          );
+                          return (
+                            <option key={week.week_id} value={week.week_id} disabled={isUsed}>
+                              {week.week_number === 1 ? '1st' : week.week_number === 2 ? '2nd' : week.week_number === 3 ? '3rd' : `${week.week_number}th`} Week {isUsed ? '(Used)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
 
-          {/* Time Slot */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Slot</label>
-            <select 
-              value={formData.timeSlot}
-              onChange={(e) => handleFormChange('timeSlot', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={!formData.patientCount}
-            >
-              <option value="">Select Time Slot</option>
-              {availableTimeSlots.map(slot => (
-                <option key={slot.time_slot_id} value={slot.time_slot_id}>
-                  {slot.starting_time.slice(0,5)} - {slot.ending_time.slice(0,5)}
-                </option>
-              ))}
-            </select>
-          </div>
+                  {/* Patient Count */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Patient Count</label>
+                    <select 
+                      value={sitting.patientCount}
+                      onChange={(e) => handleSittingChange(sitting.id, 'patientCount', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Select Count</option>
+                      <option value="15">15 Patients</option>
+                      <option value="20">20 Patients</option>
+                    </select>
+                  </div>
 
+                  {/* Room Number - Only if multiple rooms */}
+                  {dropdownData.rooms.length > 1 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
+                      <select 
+                        value={sitting.roomNumber}
+                        onChange={(e) => handleSittingChange(sitting.id, 'roomNumber', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="">Select Room</option>
+                        {dropdownData.rooms.map(room => (
+                          <option key={room} value={room}>Room {room}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Time Slot */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Time Slot</label>
+                    <select 
+                      value={sitting.timeSlot}
+                      onChange={(e) => handleSittingChange(sitting.id, 'timeSlot', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      disabled={!sitting.patientCount}
+                    >
+                      <option value="">Select Time Slot</option>
+                      {availableTimeSlots.map(slot => (
+                        <option key={slot.time_slot_id} value={slot.time_slot_id}>
+                          {slot.starting_time.slice(0,5)} - {slot.ending_time.slice(0,5)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                </div>
+              </div>
+            );
+          })}
         </div>
         
-        <div className="mt-6 flex justify-end space-x-3">
-          <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
-            Cancel
-          </button>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-            Add Sitting Schedule
-          </button>
-        </div>
+
       </div>
+
+      {/* Section 5: Fees */}
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="text-xl font-semibold mb-4 text-orange-600">Fees</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Doctor Fees</label>
+            <input 
+              type="number" 
+              placeholder="Enter doctor consultation fee"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Pharmacy Charge</label>
+            <input 
+              type="number" 
+              placeholder="Enter pharmacy service charge"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+  </div>
+    <div className="mt-6 flex justify-end space-x-3">
+      <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+        Cancel
+      </button>
+      <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+        Submit Request
+      </button>
+    </div>
 
     </div>
   );

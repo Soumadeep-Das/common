@@ -92,11 +92,13 @@ const getFormDropdownData = async (req, res) => {
       pool.query('SELECT * FROM week ORDER BY week_id'),
       pool.query('SELECT * FROM day ORDER BY day_id'),
       pool.query('SELECT * FROM time_slots ORDER BY time_slot_id'),
-      pool.query('SELECT room_count FROM pharmacy WHERE pharmacy_id = $1', [pharmacyId])
+      pool.query('SELECT room_count, pharmacy_opening_hour, pharmacy_closing_hour FROM pharmacy WHERE pharmacy_id = $1', [pharmacyId])
     ]);
 
     const roomCount = pharmacyResult.rows[0]?.room_count || 1;
     const rooms = Array.from({length: roomCount}, (_, i) => i + 1);
+    
+    const pharmacyHours = pharmacyResult.rows[0];
 
     res.json({
       data: {
@@ -104,7 +106,9 @@ const getFormDropdownData = async (req, res) => {
         weeks: weekResult.rows,
         days: dayResult.rows,
         timeSlots: timeSlotsResult.rows,
-        rooms: rooms
+        rooms: rooms,
+        pharmacyOpeningHour: pharmacyHours?.pharmacy_opening_hour,
+        pharmacyClosingHour: pharmacyHours?.pharmacy_closing_hour
       }
     });
   } catch (err) {
@@ -112,6 +116,7 @@ const getFormDropdownData = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 
 module.exports = {getAllDoctorsForPharmacy,  getDoctorOverallUnavailability,  getPharmacyOverallUnavailability,  getFormDropdownData};
